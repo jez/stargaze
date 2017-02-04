@@ -34,6 +34,13 @@ Alternatively, there's a Homebrew formula if you're on macOS:
 brew install jez/formulae/stargaze
 ```
 
+If you want to take it up a notch, you can even add an alias like this in your
+bashrc/zshrc:
+
+```
+alias bored='stargaze random'
+```
+
 ## Dependencies
 
 This script requires that `jq` is on your PATH. If it's not check the
