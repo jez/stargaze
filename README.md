@@ -68,13 +68,13 @@ repos), just re-run `stargaze fetch GITHUB_USER`
 Second: ask for a random repo:
 
 ```
-stargaze reandom
+stargaze random
 ```
 
 Alternatively, you can ask for more than one at a time:
 
 ```
-stargaze reandom 10
+stargaze random 10
 ```
 
 
