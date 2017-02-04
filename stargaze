@@ -115,6 +115,11 @@ case "$1" in
     fetch_stars "$__user"
     ;;
   random)
+    if [ ! -f "$CACHE_FILE" ]; then
+      echo "error: No cache file found at $CACHE_FILE." | in_red
+      echo "Be sure to initialize first with 'stargaze fetch <user>'"
+      exit 1
+    fi
     # If we've been given an <n> in arg 2, use it, otherwise default to n=1
     __n="${2:-1}"
     get_random_repos "$__n"
