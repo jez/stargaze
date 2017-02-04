@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+# ----- Constants -----
+CACHE_FOLDER="${XDG_CACHE_HOME:-$HOME/.cache}/stargaze"
+CACHE_FILE="$CACHE_FOLDER/starred-repos.json"
+GITHUB_API="https://api.github.com"
+
+USAGE="
+stargaze - gaze at repos you've starred
+
+Usage:
+  stargaze fetch <github-user>   Fetch (or refetch) your starred repos
+  stargaze random [<n>]          Fetch <n> random starred repos [default: 1].
+
+Dependencies:
+  Make sure 'jq' is available on your PATH.
+  For more information, see <https://stedolan.github.io/jq/>.
+
+Rate Limit:
+  Because of the GitHub API rate limits, it's expected that you run 'fetch'
+  infrequently (i.e., less than once per hour) but 'random' as frequently as
+  you want.
+
+  GitHub supports 60 requests per hour. Due to pagination, we must make one
+  request to get 30 stars. Unless you have 1800 starred repos, you won't
+  exhaust this limit with one fetch.
+"
+
+# ----- Helpers -----
+# Helper colors
+cnone="$(echo -ne '\033[0m')"
+cwhiteb="$(echo -ne '\033[1;37m')"
+cred="$(echo -ne '\033[0;31m')"
+cgreen="$(echo -ne '\033[0;32m')"
+
+# Detects whether we can add colors or not
+# http://stackoverflow.com/a/911213
+in_white() {
+  [ -t 1 ] && echo -n "$cwhiteb"
+  cat -
+  [ -t 1 ] && echo -n "$cnone"
+}
+in_red() {
+  [ -t 1 ] && echo -n "$cred"
+  cat -
+  [ -t 1 ] && echo -n "$cnone"
+}
+in_green() {
+  [ -t 1 ] && echo -n "$cgreen"
+  cat -
+  [ -t 1 ] && echo -n "$cnone"
+}
+
+starred_api_url() {
+  local user="$1"
+  # use what's in the second argument, or else use the string "1"
+  local page=${2:-1}
+
+  echo "users/$user/starred?page=$page"
+}
+
+select_link_header() {
+  grep 'Link:'
+}
+
+extract_last_page() {
+  # Match the last page with a group;
+  # Replace all text on that line with just the contents of the match
+  sed -E 's/.*page=([0-9]+)>; rel="last".*/\1/'
+}
+
+# ----- Commands -----
+
+fetch_stars() {
+  local user="$1"
+
+  echo "Fetching stars for $user to $CACHE_FILE ..." | in_white
+
+  local url
+  url="$GITHUB_API/$(starred_api_url "$user")"
+
+  last_page=$(curl -s -I "$url" | select_link_header | extract_last_page)
+
+  mkdir -p "$CACHE_FOLDER"
+  rm -f "$CACHE_FILE"
+
+  local page_url
+  for ((page=1; page<=last_page; page++)); do
+    page_url="$GITHUB_API/$(starred_api_url "$user" "$page")"
+
+    echo "    ...url: $page_url"
+    curl -s "$page_url" >> "$CACHE_FILE"
+  done
+
+  echo "Done." | in_green
+}
+
+get_random_repos() {
+  local n="$1"
+  local query='.html_url + " - " + .description'
+  jq --raw-output ".[] | $query" "$CACHE_FILE" | shuf | head -n "$n" | sed $'s/ - /\\\n/'
+}
+
+# ----- CLI Interface -----
+
+case "$1" in
+  fetch)
+    if [ -z "$2" ]; then
+      echo "error: No username specified" | in_red
+      echo "$USAGE"
+      exit 1
+    fi
+
+    __user="$2"
+    fetch_stars "$__user"
+    ;;
+  random)
+    # If we've been given an <n> in arg 2, use it, otherwise default to n=1
+    __n="${2:-1}"
+    get_random_repos "$__n"
+    ;;
+  *)
+    echo "$USAGE"
+    ;;
+esac
+
+
