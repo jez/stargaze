@@ -69,8 +69,8 @@ extract_last_page() {
   sed -E 's/.*page=([0-9]+)>; rel="last".*/\1/'
 }
 
-which shuf && alias shuf=shuf
-which gshuf && alias shuf=gshuf
+which shuf &> /dev/null && alias shuf=shuf
+which gshuf &> /dev/null && alias shuf=gshuf
 
 # ----- Commands -----
 
