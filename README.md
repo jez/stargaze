@@ -43,10 +43,11 @@ alias bored='stargaze random'
 
 ## Dependencies
 
-This script requires that `jq` is on your PATH. If it's not check the
-installation instructions for your system:
+This script requires that `jq` and `shuf` or `gshuf` is on your PATH. If it's
+not check the installation instructions for your system:
 
 - <https://stedolan.github.io/jq/>
+- `brew install coreutils` (to get `shuf` on OS X)
 
 ## Usage
 
